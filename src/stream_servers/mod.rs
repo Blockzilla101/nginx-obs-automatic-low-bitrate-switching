@@ -13,6 +13,7 @@ pub mod nms;
 pub mod obs;
 pub mod rist;
 pub mod sls;
+pub mod srs;
 pub mod xiu;
 
 pub use belabox::Belabox;
@@ -23,6 +24,7 @@ pub use nms::NodeMediaServer;
 pub use obs::Obs;
 pub use rist::Rist;
 pub use sls::SrtLiveServer;
+pub use srs::SRS;
 pub use xiu::Xiu;
 
 #[async_trait]
