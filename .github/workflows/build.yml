@@ -75,5 +75,5 @@ jobs:
             - name: Upload Artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: archive.tar.xz
+                  name: archive-${{ matrix.target }}.tar.xz
                   path: ${{ env.ARCHIVE }}
