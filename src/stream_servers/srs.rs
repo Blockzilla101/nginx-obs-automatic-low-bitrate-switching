@@ -9,13 +9,11 @@ use super::{default_reqwest_client, Bsl, StreamServersCommands, SwitchLogic};
 use crate::switcher::{SwitchType, Triggers};
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct StatKbps {
     recv_30s: u64,
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Stat {
     pub id: String,
     pub name: String,
@@ -54,22 +52,43 @@ impl SRS {
             return None;
         }
 
-        let text = res.text().await.ok()?;
-        let data: Value = serde_json::from_str(&text).ok()?;
-        let publisher = data["streams"]
-            .as_array()?
-            .iter()
-            .find(|x| x["name"] == self.publisher)?;
+        let text = match res.text().await {
+            Ok(text) => text,
+            Err(_) => {
+                error!("Error reading stats page ({})", self.stats_url);
+                return None;
+            }
+        };
 
-        let stream: Stat = serde_json::from_value(publisher.to_owned()).ok()?;
-        // let stream: Stat = match serde_json::from_value(publisher.to_owned()) {
-        //     Ok(stats) => stats,
-        //     Err(error) => {
-        //         trace!("{}", &data);
-        //         error!("Error parsing stats ({}) {}", self.stats_url, error);
-        //         return None;
-        //     }
-        // };
+        let data: Value = serde_json::from_str(&text).ok()?;
+        let streams: Vec<Value> = match data["streams"].as_array() {
+            Some(streams) => streams.to_owned(),
+            None => {
+                trace!("Error parsing stats ({})", self.stats_url);
+                return None;
+            }
+        };
+
+        let publisher = match streams.into_iter().find(|x| x["name"] == self.publisher) {
+            Some(publisher) => publisher.to_owned(),
+            None => {
+                trace!(
+                    "Publisher ({}) not found in stats ({})",
+                    self.publisher,
+                    self.stats_url
+                );
+                return None;
+            }
+        };
+
+        let stream: Stat = match serde_json::from_value(publisher.to_owned()) {
+            Ok(stats) => stats,
+            Err(error) => {
+                trace!("{}", &data);
+                error!("Error parsing stats ({}) {}", self.stats_url, error);
+                return None;
+            }
+        };
 
         trace!("{:#?}", stream);
         Some(stream)
