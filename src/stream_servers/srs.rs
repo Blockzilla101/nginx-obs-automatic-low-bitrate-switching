@@ -111,7 +111,8 @@ impl SwitchLogic for SRS {
         }
 
         if stats.kbps.recv_30s == 0 {
-            return SwitchType::Previous;
+            // return SwitchType::Previous;
+            return SwitchType::Offline;
         }
 
         if let Some(low) = triggers.low {
